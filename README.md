@@ -11,3 +11,7 @@ npx create-next-app@canary nextjs-starter \
 ```bash
 pnpm dev
 ```
+
+## Add support for Typescript plugin
+
+[TypeScript Plugin](https://nextjs.org/docs/app/building-your-application/configuring/typescript#typescript-plugin)
