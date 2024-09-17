@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "npm run clean && next dev --turbo",
+    "build": "npm run clean && next build",
+    "start": "npm run build && next start",
+    "lint": "next lint",
+    "clean": "rm -rf .next out"
   },
   "dependencies": {
     "next": "15.0.0-canary.157",
