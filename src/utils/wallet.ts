@@ -1,54 +1,143 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 
-export type WalletStatus = 'missing' | 'connected' | 'error' | undefined;
-
-function getWalletStatusMsg(status: WalletStatus) {
-  let msg = '';
+function getWalletStatusMsg(status: WalletState['status'], error?: ErrorShape) {
+  let message = '';
   if (status === 'connected') {
-    msg = 'Connected';
+    message = 'Connected';
   } else if (status === 'error') {
-    msg = 'Error!';
+    message = error?.message ?? 'Error!!';
   } else if (status === 'missing') {
-    msg = 'Please install MetaMask';
+    message = 'Please install MetaMask';
   }
-  return msg;
+  return message;
+}
+
+function getWalletState(
+  status: WalletState['status'],
+  account?: string,
+  error?: ErrorShape
+): WalletState {
+  const message = getWalletStatusMsg(status, error);
+  return { status, account, message };
+}
+
+function getErrorShape(code: string | number): ErrorShape {
+  let message = 'Error!';
+
+  // NOTE: Ethers.js (string error code), Native Metamask (number error code)
+  if (code === 'ACTION_REJECTED' || code === 4001) {
+    message = 'User rejected the request.';
+  }
+
+  return { code: `${code}`, message };
 }
 
 export function useConnect() {
-  const [status, setStatus] = useState<WalletStatus>();
-  const [account, setAccount] = useState<string>();
+  const [status, setStatus] = useState<WalletState>();
+  const [loading, setLoading] = useState(false);
 
   const handleConnect = useCallback(async () => {
+    // resets any pre-existing error message
+    setStatus(getWalletState('not_connected'));
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ethereum = (window as any).ethereum;
 
     if (typeof ethereum !== 'undefined') {
       try {
-        await ethereum.request({ method: 'eth_requestAccounts' });
-        const accountsList = await ethereum.request({ method: 'eth_accounts' });
-        if (accountsList < 1) {
-          throw new Error('Empty accountsList!');
-        }
-        setStatus('connected');
-        setAccount(accountsList[0]);
+        // await ethereum.request({ method: 'wallet_requestPermissions' }, [{ eth_accounts: {} }]);
+        // await ethereum.request({ method: 'eth_requestAccounts' });
+        // const account = accountsList[0];
+
+        const provider = new ethers.BrowserProvider(ethereum);
+
+        // Prompt the user to approve the `eth_accounts` permission
+        // await provider.send('wallet_requestPermissions', [{ eth_accounts: {} }]);
+
+        /**
+         * Get ethereum addresses for the "identified" user
+         * For "unidentified" users, internally calls `wallet_requestPermissions` for
+         * permission to call `eth_accounts`
+         */
+        const accounts = await provider.send('eth_requestAccounts', []);
+        const account = accounts[0];
+
+        // const signer = await provider.getSigner();
+        // const account = signer.address;
+
+        setStatus(getWalletState('connected', account));
       } catch (err) {
         console.error(err);
-        setStatus('error');
+        const error = getErrorShape((err as ErrorShape).code);
+        setStatus(getWalletState('error', undefined, error));
       }
     } else {
-      setStatus('missing');
+      setStatus(getWalletState('missing'));
     }
   }, []);
 
-  const msg = getWalletStatusMsg(status);
+  const checkConnection = useCallback(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ethereum = (window as any).ethereum;
 
-  return [status, msg, account, handleConnect] as [
-    WalletStatus,
-    string,
-    string | undefined,
-    () => Promise<void>,
-  ];
+    if (typeof ethereum !== 'undefined') {
+      try {
+        const provider = new ethers.BrowserProvider(ethereum);
+
+        const accounts = await provider.listAccounts();
+
+        if (accounts.length > 0) {
+          setStatus(getWalletState('connected', accounts[0].address));
+        } else {
+          setStatus(getWalletState('not_connected'));
+        }
+      } catch (err) {
+        console.error(err);
+        const error = getErrorShape((err as ErrorShape).code);
+        setStatus(getWalletState('error', undefined, error));
+      }
+    } else {
+      setStatus(getWalletState('missing'));
+    }
+  }, []);
+
+  const handleDisconnect = useCallback(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ethereum = (window as any).ethereum;
+
+    if (typeof ethereum !== 'undefined') {
+      try {
+        const provider = new ethers.BrowserProvider(ethereum);
+
+        await provider.send('wallet_revokePermissions', [{ eth_accounts: {} }]);
+
+        setStatus(getWalletState('not_connected'));
+      } catch (err) {
+        console.error(err);
+        const error = getErrorShape((err as ErrorShape).code);
+        setStatus(getWalletState('error', undefined, error));
+      }
+    } else {
+      setStatus(getWalletState('missing'));
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await checkConnection();
+      setLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { status, loading, handleConnect, handleDisconnect } as {
+    status: WalletState;
+    loading: boolean;
+    handleConnect: () => Promise<void>;
+    handleDisconnect: () => Promise<void>;
+  };
 }
 
 export function useBalance() {
@@ -87,4 +176,15 @@ export function useBalance() {
     boolean,
     (address: string | undefined) => Promise<void>,
   ];
+}
+
+export interface WalletState {
+  status: 'missing' | 'connected' | 'error' | 'not_connected' | undefined;
+  account?: string;
+  message?: string;
+}
+
+export interface ErrorShape {
+  code: string;
+  message: string;
 }

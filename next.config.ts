@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   output: process.env.OUTPUT as 'export' | undefined,
@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     unoptimized: process.env.OUTPUT === 'export',
   },
   experimental: {
-    ppr: (process.env.OUTPUT !== 'export') && 'incremental',
+    ppr: process.env.OUTPUT !== 'export' && 'incremental',
   },
 };
 
