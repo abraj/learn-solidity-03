@@ -1,9 +1,17 @@
 import { useBalance } from '@/utils/wallet';
+import { useEffect } from 'react';
 
 export default function Balance({ address }: BalanceProps) {
-  const [balance, loading, getBalance] = useBalance();
+  const { balance, loading, getBalance, resetBalance } = useBalance();
+
+  useEffect(() => {
+    if (typeof balance !== 'undefined' && !address) {
+      resetBalance();
+    }
+  }, [address, balance, resetBalance]);
+
   return (
-    <div className="flex border h-10 items-center">
+    <div className="flex border h-10 p-1 items-center">
       {address && (
         <>
           <div>

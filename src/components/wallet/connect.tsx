@@ -1,16 +1,17 @@
-import { useConnect } from '@/utils/wallet';
 import { useEffect } from 'react';
+import { useConnect } from '@/utils/wallet';
+import type { ChainInfo } from '@/utils/wallet';
 
-export default function Connect({ setAccount }: ConnectProps) {
+export default function Connect({ setWalletAccount }: ConnectProps) {
   const { status: state, handleConnect, handleDisconnect } = useConnect();
-  const { status, account, message } = state ?? {};
+  const { status, chainInfo, account, message } = state ?? {};
 
   useEffect(() => {
-    setAccount(account);
-  }, [setAccount, account]);
+    setWalletAccount({ address: account, chainInfo });
+  }, [setWalletAccount, account, chainInfo]);
 
   return (
-    <div className="flex border h-10 items-center">
+    <div className="flex border h-10 p-1 items-center">
       <div>
         {typeof status === 'undefined' ? (
           <div>Please wait..</div>
@@ -34,5 +35,10 @@ export default function Connect({ setAccount }: ConnectProps) {
 }
 
 interface ConnectProps {
-  setAccount: (v: string | undefined) => void;
+  setWalletAccount: (v: WalletAccount | undefined) => void;
+}
+
+export interface WalletAccount {
+  address: string | undefined;
+  chainInfo: ChainInfo | undefined;
 }
