@@ -123,6 +123,19 @@ export function useConnect() {
     }
   }, []);
 
+  const handleAccountsChanged = useCallback(
+    (accounts: string[]) => {
+      if (status?.status === 'connected') {
+        if (accounts.length === 0) {
+          setStatus(getWalletState('not_connected'));
+        } else {
+          console.warn('[WARN] Unhandled scenario:', accounts);
+        }
+      }
+    },
+    [status]
+  );
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -131,6 +144,25 @@ export function useConnect() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ethereum = (window as any).ethereum;
+
+    if (typeof ethereum !== 'undefined') {
+      try {
+        // const provider = new ethers.BrowserProvider(ethereum);
+        ethereum.on('accountsChanged', handleAccountsChanged);
+        return () => {
+          ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        };
+      } catch (err) {
+        console.error(err);
+        const error = getErrorShape((err as ErrorShape).code);
+        setStatus(getWalletState('error', undefined, error));
+      }
+    }
+  }, [handleAccountsChanged]);
 
   return { status, loading, handleConnect, handleDisconnect } as {
     status: WalletState;

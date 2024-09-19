@@ -13,7 +13,7 @@ export default function Connect({ setAccount }: ConnectProps) {
     <div className="flex border h-10 items-center">
       <div>
         {typeof status === 'undefined' ? (
-          <div>{/* Please wait.. */}</div>
+          <div>Please wait..</div>
         ) : status !== 'connected' ? (
           <button onClick={() => handleConnect()}>Connect</button>
         ) : (
