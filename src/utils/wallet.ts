@@ -16,7 +16,7 @@ function getWalletStatusMsg(status: WalletState['status'], error?: ErrorShape) {
 
 function getChainInfo(chainId: string | undefined): ChainInfo | undefined {
   if (!chainId) return undefined;
-  if (chainId == '0x1') {
+  if (chainId === '0x1') {
     return {
       chainId: 1,
       chainIdHex: '0x1',
@@ -24,7 +24,7 @@ function getChainInfo(chainId: string | undefined): ChainInfo | undefined {
       symbol: 'ETH',
       type: 'mainnet',
     };
-  } else if (chainId == '0xaa36a7') {
+  } else if (chainId === '0xaa36a7') {
     return {
       chainId: 11155111,
       chainIdHex: '0xaa36a7',

@@ -6,6 +6,7 @@
   ],
   "plugins": ["prettier"],
   "rules": {
-    "prettier/prettier": "error" // Make prettier errors show up as eslint errors
+    "prettier/prettier": "error", // Make prettier errors show up as eslint errors
+    "eqeqeq": "error"
   }
 }
