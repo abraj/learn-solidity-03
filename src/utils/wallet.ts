@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
+import { addr_includes } from './address';
 
 function getWalletStatusMsg(status: WalletState['status'], error?: ErrorShape) {
   let message = '';
@@ -66,6 +67,18 @@ function getErrorShape(code: string | number): ErrorShape {
   return { code: `${code}`, message };
 }
 
+function getConnectedAccount() {
+  return localStorage.getItem('selected_account');
+}
+
+function setConnectedAccount(addr: string) {
+  localStorage.setItem('selected_account', addr);
+}
+
+function removeConnectedAccount() {
+  return localStorage.removeItem('selected_account');
+}
+
 export function useConnect() {
   const [status, setStatus] = useState<WalletState | undefined>();
   const [loading, setLoading] = useState(false);
@@ -94,12 +107,13 @@ export function useConnect() {
          * permission to call `eth_accounts`
          */
         const accounts = await provider.send('eth_requestAccounts', []);
-        const account = accounts[0];
+        const account = accounts[0]; // Use selected account, by default (for now)
 
         // const signer = await provider.getSigner();
         // const account = signer.address;
 
         const status = 'connected';
+        setConnectedAccount(account);
         setStatus(getWalletState({ status, account }));
 
         // NOTE: intentionally not `await`ed
@@ -107,6 +121,31 @@ export function useConnect() {
           const chainId = `0x${network.chainId.toString(16)}`;
           setStatus(getWalletState({ status, chainId, account }));
         });
+      } catch (err) {
+        console.error(err);
+        const error = getErrorShape((err as ErrorShape).code);
+        setStatus(getWalletState({ status: 'error', error }));
+      }
+    } else {
+      setStatus(getWalletState('missing'));
+    }
+  }, []);
+
+  const handleDisconnect = useCallback(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ethereum = (window as any).ethereum;
+
+    if (typeof ethereum !== 'undefined') {
+      try {
+        const account = getConnectedAccount() ?? undefined;
+        if (account) {
+          const provider = new ethers.BrowserProvider(ethereum);
+          await provider.send('wallet_revokePermissions', [
+            { eth_accounts: {} },
+          ]);
+          removeConnectedAccount();
+        }
+        setStatus(getWalletState('not_connected'));
       } catch (err) {
         console.error(err);
         const error = getErrorShape((err as ErrorShape).code);
@@ -127,19 +166,18 @@ export function useConnect() {
 
         const p1 = provider.listAccounts();
         const p2 = provider.getNetwork();
-        const [accounts, network] = await Promise.all([p1, p2]);
+        const [accountsRpc, network] = await Promise.all([p1, p2]);
         const chainId = `0x${network.chainId.toString(16)}`;
 
-        if (accounts.length > 0) {
-          setStatus(
-            getWalletState({
-              status: 'connected',
-              chainId,
-              account: accounts[0].address,
-            })
-          );
+        const accounts = accountsRpc.map((v) => v.address);
+        const account = getConnectedAccount() ?? undefined;
+
+        if (!accounts || accounts.length === 0) {
+          await handleDisconnect();
+        } else if (!addr_includes(accounts, account)) {
+          await handleDisconnect();
         } else {
-          setStatus(getWalletState('not_connected'));
+          setStatus(getWalletState({ status: 'connected', chainId, account }));
         }
       } catch (err) {
         console.error(err);
@@ -149,40 +187,19 @@ export function useConnect() {
     } else {
       setStatus(getWalletState('missing'));
     }
-  }, []);
-
-  const handleDisconnect = useCallback(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ethereum = (window as any).ethereum;
-
-    if (typeof ethereum !== 'undefined') {
-      try {
-        const provider = new ethers.BrowserProvider(ethereum);
-
-        await provider.send('wallet_revokePermissions', [{ eth_accounts: {} }]);
-
-        setStatus(getWalletState('not_connected'));
-      } catch (err) {
-        console.error(err);
-        const error = getErrorShape((err as ErrorShape).code);
-        setStatus(getWalletState({ status: 'error', error }));
-      }
-    } else {
-      setStatus(getWalletState('missing'));
-    }
-  }, []);
+  }, [handleDisconnect]);
 
   const handleAccountsChanged = useCallback(
-    (accounts: string[]) => {
+    async (accounts: string[]) => {
       if (status?.status === 'connected') {
-        if (accounts.length === 0) {
-          setStatus(getWalletState('not_connected'));
-        } else {
-          console.warn('[WARN] Unhandled scenario:', accounts);
+        if (!accounts || accounts.length === 0) {
+          await handleDisconnect();
+        } else if (!addr_includes(accounts, status.account)) {
+          await handleDisconnect();
         }
       }
     },
-    [status]
+    [status, handleDisconnect]
   );
 
   const updateWalletAndAccounts = useCallback(
