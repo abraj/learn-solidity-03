@@ -1,5 +1,6 @@
-import { ChainInfo } from '@/utils/wallet';
 import { clsx } from 'clsx';
+import { ChainInfo } from '@/utils/wallet';
+import { switchChain } from '@/utils/chain';
 
 export default function WalletHeader({ chainInfo }: WalletHeaderProps) {
   const { name, type } = chainInfo ?? {};
@@ -24,6 +25,12 @@ export default function WalletHeader({ chainInfo }: WalletHeaderProps) {
           >
             {name}
           </div>
+          <div>&nbsp;&nbsp;</div>
+          {chainInfo.chainIdHex !== '0x1' && (
+            <div className="text-sm">
+              <button onClick={() => switchChain()}>Switch</button>
+            </div>
+          )}
         </>
       )}
     </div>
