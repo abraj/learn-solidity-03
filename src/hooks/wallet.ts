@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
-import { addr_includes } from './address';
+import { addr_includes } from '../utils/address';
 
 function getWalletStatusMsg(status: WalletState['status'], error?: ErrorShape) {
   let message = '';

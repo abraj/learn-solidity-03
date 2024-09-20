@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useConnect } from '@/utils/wallet';
-import type { ChainInfo } from '@/utils/wallet';
+import { useConnect } from '@/hooks/wallet';
+import type { ChainInfo } from '@/hooks/wallet';
 
 export default function Connect({ setWalletAccount }: ConnectProps) {
   const { status: state, handleConnect, handleDisconnect } = useConnect();

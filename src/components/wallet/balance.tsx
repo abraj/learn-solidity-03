@@ -1,4 +1,4 @@
-import { useBalance } from '@/utils/wallet';
+import { useBalance } from '@/hooks/wallet';
 import { useEffect } from 'react';
 
 export default function Balance({ address }: BalanceProps) {

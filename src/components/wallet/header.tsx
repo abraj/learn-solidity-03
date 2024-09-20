@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { ChainInfo } from '@/utils/wallet';
+import { ChainInfo } from '@/hooks/wallet';
 import { switchChain } from '@/utils/chain';
 
 export default function WalletHeader({ chainInfo }: WalletHeaderProps) {
