@@ -56,15 +56,37 @@ function getWalletState(argx: string | WalletStateArg): WalletState {
   return { status, chainInfo, account, message };
 }
 
-function getErrorShape(code: string | number): ErrorShape {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getErrorShape(err: any): ErrorShape {
+  let code = '';
   let message = 'Error!';
 
+  if (typeof err?.code === 'string') {
+    // Ethers.js error (string code)
+    const originalError = err?.info?.error;
+    if (originalError?.code && originalError?.message) {
+      code = `${originalError.code}`;
+      message = originalError.message
+        .substring(originalError.message.indexOf(':') + 1)
+        .trim();
+    } else {
+      code = `${err.code}`;
+      message = `Error: ${err.shortMessage}`;
+    }
+  } else {
+    // Metamask error (number code)
+    if (err?.code && err?.message) {
+      code = `${err.code}`;
+      message = err.message.substring(err.message.indexOf(':') + 1).trim();
+    }
+  }
+
   // NOTE: Ethers.js (string error code), Native Metamask (number error code)
-  if (code === 'ACTION_REJECTED' || code === 4001) {
+  if (err.code === 'ACTION_REJECTED' || err.code === 4001) {
     message = 'User rejected the request.';
   }
 
-  return { code: `${code}`, message };
+  return { code, message };
 }
 
 function getConnectedAccount() {
@@ -72,6 +94,7 @@ function getConnectedAccount() {
 }
 
 function setConnectedAccount(addr: string) {
+  // TODO: Verify signature, rather than directly trusting Wallet response
   localStorage.setItem('selected_account', addr);
 }
 
@@ -123,7 +146,7 @@ export function useConnect() {
         });
       } catch (err) {
         console.error(err);
-        const error = getErrorShape((err as ErrorShape).code);
+        const error = getErrorShape(err);
         setStatus(getWalletState({ status: 'error', error }));
       }
     } else {
@@ -148,7 +171,7 @@ export function useConnect() {
         setStatus(getWalletState('not_connected'));
       } catch (err) {
         console.error(err);
-        const error = getErrorShape((err as ErrorShape).code);
+        const error = getErrorShape(err);
         setStatus(getWalletState({ status: 'error', error }));
       }
     } else {
@@ -170,7 +193,12 @@ export function useConnect() {
         const chainId = `0x${network.chainId.toString(16)}`;
 
         const accounts = accountsRpc.map((v) => v.address);
-        const account = getConnectedAccount() ?? undefined;
+
+        let account = getConnectedAccount() ?? undefined;
+        if (accounts.length && !account) {
+          setConnectedAccount(accounts[0]);
+          account = getConnectedAccount() ?? undefined;
+        }
 
         if (!accounts || accounts.length === 0) {
           await handleDisconnect();
@@ -181,7 +209,7 @@ export function useConnect() {
         }
       } catch (err) {
         console.error(err);
-        const error = getErrorShape((err as ErrorShape).code);
+        const error = getErrorShape(err);
         setStatus(getWalletState({ status: 'error', error }));
       }
     } else {
@@ -237,7 +265,7 @@ export function useConnect() {
         };
       } catch (err) {
         console.error(err);
-        const error = getErrorShape((err as ErrorShape).code);
+        const error = getErrorShape(err);
         setStatus(getWalletState({ status: 'error', error }));
       }
     }
@@ -264,7 +292,6 @@ export function useBalance() {
         const provider = new ethers.BrowserProvider(ethereum);
         setLoading(true);
         const balance = await provider.getBalance(address);
-        setLoading(false);
         const ethBalanceStr = ethers.formatEther(balance);
         let ethBalance = Number.parseFloat(ethBalanceStr);
         ethBalance = Math.round(ethBalance * 10 ** 4) / 10 ** 4;
@@ -272,6 +299,8 @@ export function useBalance() {
       } catch (err) {
         console.error(err);
         setBalance(undefined);
+      } finally {
+        setLoading(false);
       }
     } else {
       if (!address) {
