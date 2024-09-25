@@ -1,8 +1,10 @@
-import { useBalance } from '@/hooks/wallet';
 import { useEffect } from 'react';
+import { useBalance } from '@/hooks/wallet';
+import type { ChainInfo } from '@/hooks/wallet';
 
-export default function Balance({ address }: BalanceProps) {
-  const { balance, loading, getBalance, resetBalance } = useBalance();
+export default function Balance({ address, chainInfo }: BalanceProps) {
+  const { balance, loading, getBalance, getBalanceFromServer, resetBalance } =
+    useBalance();
 
   useEffect(() => {
     if (typeof balance !== 'undefined' && !address) {
@@ -16,6 +18,11 @@ export default function Balance({ address }: BalanceProps) {
         <>
           <div>
             <button onClick={() => getBalance(address)}>getBalance</button>
+            <button
+              onClick={() => getBalanceFromServer(address, chainInfo?.chainId)}
+            >
+              server
+            </button>
           </div>
           <div>&nbsp;&nbsp;</div>
           <div>
@@ -32,4 +39,5 @@ export default function Balance({ address }: BalanceProps) {
 
 export interface BalanceProps {
   address: string | undefined;
+  chainInfo: ChainInfo | undefined;
 }

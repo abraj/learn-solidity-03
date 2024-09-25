@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { addr_includes } from '../utils/address';
+import { fetchBalance, sendEth } from '@/api/actions/wallet';
+import { displayBalance, weiFromEth } from '@/utils/common';
 
 function getWalletStatusMsg(status: WalletState['status'], error?: ErrorShape) {
   let message = '';
@@ -22,6 +24,7 @@ function getChainInfo(chainId: string | undefined): ChainInfo | undefined {
       chainIdHex: '0x1',
       name: 'Ethereum Mainnet',
       symbol: 'ETH',
+      alias: 'ethereum',
       type: 'mainnet',
     };
   } else if (chainId === '0xaa36a7') {
@@ -30,6 +33,7 @@ function getChainInfo(chainId: string | undefined): ChainInfo | undefined {
       chainIdHex: '0xaa36a7',
       name: 'Sepolia Testnet',
       symbol: 'SepoliaETH',
+      alias: 'sepolia',
       type: 'testnet',
     };
   } else {
@@ -38,6 +42,7 @@ function getChainInfo(chainId: string | undefined): ChainInfo | undefined {
       chainIdHex: chainId,
       name: 'Unknown Network',
       symbol: 'NO',
+      alias: null,
       type: 'unknown',
     };
   }
@@ -292,9 +297,7 @@ export function useBalance() {
         const provider = new ethers.BrowserProvider(ethereum);
         setLoading(true);
         const balance = await provider.getBalance(address);
-        const ethBalanceStr = ethers.formatEther(balance);
-        let ethBalance = Number.parseFloat(ethBalanceStr);
-        ethBalance = Math.round(ethBalance * 10 ** 4) / 10 ** 4;
+        const ethBalance = displayBalance(balance);
         setBalance(ethBalance);
       } catch (err) {
         console.error(err);
@@ -311,18 +314,185 @@ export function useBalance() {
     }
   }, []);
 
+  const getBalanceFromServer = useCallback(
+    async (address: string | undefined, chainId: number | undefined) => {
+      try {
+        if (address) {
+          setLoading(true);
+          const resp = await fetchBalance(chainId, address);
+          setLoading(false);
+          if (resp.status === 'ok') {
+            setBalance(resp.balance);
+          } else {
+            console.error(resp);
+            throw new Error(resp.errMsg);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setBalance(undefined);
+      }
+    },
+    []
+  );
+
   const resetBalance = useCallback(() => {
     setBalance(undefined);
   }, []);
 
-  return { balance, loading, getBalance, resetBalance } as UseBalanceReturn;
+  return {
+    balance,
+    loading,
+    getBalance,
+    getBalanceFromServer,
+    resetBalance,
+  } as UseBalanceReturn;
+}
+
+export function useTxn() {
+  const [hash, setHash] = useState<string | undefined>();
+  const [loading, setLoading] = useState(false);
+
+  const submitTxn = useCallback(
+    async (
+      address: string | undefined,
+      toAddress: string | undefined,
+      ethAmount: number | undefined
+    ) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ethereum = (window as any).ethereum;
+
+      const weiValue = weiFromEth(ethAmount);
+      const toAddressValid = ethers.isAddress(toAddress);
+
+      if (
+        typeof ethereum !== 'undefined' &&
+        address &&
+        toAddressValid &&
+        weiValue
+      ) {
+        try {
+          const provider = new ethers.BrowserProvider(ethereum);
+          const signer = await provider.getSigner();
+
+          const txParams = {
+            to: toAddress,
+            value: weiValue,
+            // gasLimit: 21000,
+          };
+          setLoading(true);
+          const tx = await signer.sendTransaction(txParams);
+          setHash(tx.hash);
+        } catch (err) {
+          console.error(err);
+          setHash(undefined);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        if (!address) {
+          console.error('Missing address:', address);
+        } else if (!toAddressValid) {
+          console.error('Invalid toAddress:', toAddress);
+        } else if (!weiValue) {
+          console.error('Invalid Amount:', ethAmount);
+        } else {
+          console.error('window.ethereum:', ethereum);
+        }
+      }
+    },
+    []
+  );
+
+  const submitTxnFromServer = useCallback(
+    async (
+      chainId: number | undefined,
+      address: string | undefined,
+      toAddress: string | undefined,
+      ethAmount: number | undefined
+    ) => {
+      try {
+        if (address) {
+          setLoading(true);
+          const resp = await sendEth(chainId, address, toAddress, ethAmount);
+          setLoading(false);
+          if (resp.status === 'ok') {
+            setHash(resp.hash);
+          } else {
+            console.error(resp);
+            throw new Error(resp.errMsg);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setHash(undefined);
+      }
+    },
+    []
+  );
+
+  const submitForm = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      const form = e.target as HTMLFormElement;
+      const submitter = (
+        form.elements.namedItem('submitter') as HTMLInputElement
+      ).value;
+      const address = (form.elements.namedItem('address') as HTMLInputElement)
+        .value;
+      const chainId = (form.elements.namedItem('chainId') as HTMLInputElement)
+        .value;
+      const amount = (form.elements.namedItem('amount') as HTMLInputElement)
+        .value;
+      const toAddress = (
+        form.elements.namedItem('toAddress') as HTMLInputElement
+      ).value;
+
+      if (submitter === 'button1') {
+        submitTxn(address, toAddress, Number(amount));
+      } else if (submitter === 'button2') {
+        submitTxnFromServer(
+          Number(chainId),
+          address,
+          toAddress,
+          Number(amount)
+        );
+      } else {
+        console.error('Invalid submitter');
+      }
+    },
+    [submitTxn, submitTxnFromServer]
+  );
+
+  const resetHash = useCallback(() => {
+    setHash(undefined);
+  }, []);
+
+  return {
+    hash,
+    loading,
+    submitForm,
+    resetHash,
+  } as UseHashReturn;
 }
 
 interface UseBalanceReturn {
   balance: number | undefined;
   loading: boolean;
   getBalance: (address: string | undefined) => Promise<void>;
+  getBalanceFromServer: (
+    address: string | undefined,
+    chainId: number | undefined
+  ) => Promise<void>;
   resetBalance: () => void;
+}
+
+interface UseHashReturn {
+  hash: string | undefined;
+  loading: boolean;
+  submitForm: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  resetHash: () => void;
 }
 
 export interface WalletState {
@@ -349,5 +519,6 @@ export interface ChainInfo {
   chainIdHex: string;
   name: string;
   symbol: string;
+  alias: string | null;
   type: 'mainnet' | 'testnet' | 'local' | 'unknown';
 }

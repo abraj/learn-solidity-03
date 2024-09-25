@@ -1,6 +1,6 @@
 import { clsx } from 'clsx';
-import { ChainInfo } from '@/hooks/wallet';
 import { switchChain } from '@/utils/chain';
+import type { ChainInfo } from '@/hooks/wallet';
 
 export default function WalletHeader({ chainInfo }: WalletHeaderProps) {
   const { name, type } = chainInfo ?? {};
