@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import Connect from '@/components/wallet/connect';
+import EthSignIn from '@/components/wallet/eth-signin';
 import Balance from '@/components/wallet/balance';
 import WalletHeader from '@/components/wallet/header';
 import FundFundMe from '@/components/wallet/fundme-fund';
@@ -23,6 +24,7 @@ export default function Page() {
     <div>
       <WalletHeader chainInfo={account?.chainInfo} />
       <Connect setWalletAccount={setWalletAccount} />
+      <EthSignIn address={address} />
 
       <Balance address={address} chainInfo={account?.chainInfo} />
       {/* <Balance address={contractAddress} /> */}

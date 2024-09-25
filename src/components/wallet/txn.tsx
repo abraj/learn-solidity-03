@@ -18,9 +18,13 @@ export default function SendTxn({ address, chainInfo }: TxnProps) {
       {address && (
         <>
           <form className="flex" onSubmit={submitForm}>
-            <input type="hidden" name="submitter" value="" />
+            <input type="hidden" name="submitter" defaultValue="" />
             <input type="hidden" name="address" value={address} />
-            <input type="hidden" name="chainId" value={chainInfo?.chainId} />
+            <input
+              type="hidden"
+              name="chainId"
+              value={chainInfo?.chainId ?? 0}
+            />
             <button
               onClick={(e) => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
