@@ -10,6 +10,7 @@ import FundFundMe from '@/components/wallet/fundme-fund';
 import WithdrawFundMe from '@/components/wallet/fundme-withdraw';
 import type { WalletAccount } from '@/components/wallet/connect';
 import SendTxn from '@/components/wallet/txn';
+import Pubkey from '@/components/wallet/public-key';
 // import { contractAddress } from '@/const/sepolia';
 
 export default function Page() {
@@ -25,6 +26,7 @@ export default function Page() {
       <WalletHeader chainInfo={account?.chainInfo} />
       <Connect setWalletAccount={setWalletAccount} />
       <EthSignIn address={address} />
+      <Pubkey address={address} chainInfo={account?.chainInfo} />
 
       <Balance address={address} chainInfo={account?.chainInfo} />
       {/* <Balance address={contractAddress} /> */}

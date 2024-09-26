@@ -57,7 +57,7 @@ export async function sendEth(
     }
   } else {
     if (!privateKey) {
-      console.error('[ERROR] Account not connected:', address);
+      console.error('[ERROR] Account not connected (on server):', address);
       return { status: 'error', errMsg: 'Invalid Account' };
     } else if (!weiValue) {
       console.error('[ERROR] Invalid Amount:', ethAmount, weiValue);

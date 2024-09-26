@@ -1,10 +1,17 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ethers } from 'ethers';
+import { sample_sign } from '@/store/store';
 
 export const useEthSignIn = () => {
   const [sign, setSign] = useState<string | undefined>();
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!sign) {
+      sample_sign.next(null);
+    }
+  }, [sign]);
 
   const startEthSignIn = useCallback(async (address: string | undefined) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,6 +33,7 @@ export const useEthSignIn = () => {
         const sign = await provider.send('personal_sign', [msg, from]);
         // const sign = await ethereum.request({ method: 'personal_sign', params: [msg, from] });
         setSign(sign);
+        sample_sign.next({ message: siweMessage, signature: sign });
 
         const recoveredAddress = ethers.verifyMessage(siweMessage, sign);
         const isVerified =
