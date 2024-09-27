@@ -146,13 +146,9 @@ export function useConnect() {
 
         const p1 = provider.getNetwork();
         const p2 = provider.lookupAddress(account);
-        const plist = Promise.all([p1, p2]);
-
-        // NOTE: intentionally not `await`ed
-        plist.then(([network, ensName]) => {
-          const chainId = `0x${network.chainId.toString(16)}`;
-          setStatus(getWalletState({ status, chainId, account, ensName }));
-        });
+        const [network, ensName] = await Promise.all([p1, p2]);
+        const chainId = `0x${network.chainId.toString(16)}`;
+        setStatus(getWalletState({ status, chainId, account, ensName }));
       } catch (err) {
         console.error(err);
         const error = getErrorShape(err);
@@ -215,13 +211,9 @@ export function useConnect() {
 
           const p1 = provider.getNetwork();
           const p2 = provider.lookupAddress(account!);
-          const plist = Promise.all([p1, p2]);
-
-          // NOTE: intentionally not `await`ed
-          plist.then(([network, ensName]) => {
-            const chainId = `0x${network.chainId.toString(16)}`;
-            setStatus(getWalletState({ status, chainId, account, ensName }));
-          });
+          const [network, ensName] = await Promise.all([p1, p2]);
+          const chainId = `0x${network.chainId.toString(16)}`;
+          setStatus(getWalletState({ status, chainId, account, ensName }));
         }
       } catch (err) {
         console.error(err);
