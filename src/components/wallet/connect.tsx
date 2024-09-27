@@ -5,6 +5,7 @@ import type { ChainInfo } from '@/hooks/wallet';
 export default function Connect({ setWalletAccount }: ConnectProps) {
   const { status: state, handleConnect, handleDisconnect } = useConnect();
   const { status, chainInfo, account, message } = state ?? {};
+  const ensName = state?.ensName;
 
   useEffect(() => {
     setWalletAccount({ address: account, chainInfo });
@@ -24,7 +25,17 @@ export default function Connect({ setWalletAccount }: ConnectProps) {
       <div>&nbsp;&nbsp;</div>
       <div>
         {status && status === 'connected' && (
-          <span className="text-violet-500">{account}</span>
+          <span className="text-violet-500">
+            {ensName ? (
+              <>
+                <strong className="text-purple-600">{ensName}</strong>
+                <span>&nbsp;</span>
+                <span>({account})</span>
+              </>
+            ) : (
+              account
+            )}
+          </span>
         )}
         {status && status !== 'connected' && (
           <span className="text-red-500">{message}</span>

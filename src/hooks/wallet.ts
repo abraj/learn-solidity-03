@@ -55,10 +55,10 @@ function getWalletState(argx: string | WalletStateArg): WalletState {
   } else {
     obj = argx;
   }
-  const { status, chainId, account, error } = obj;
+  const { status, chainId, account, ensName, error } = obj;
   const message = getWalletStatusMsg(status, error);
   const chainInfo = getChainInfo(chainId);
-  return { status, chainInfo, account, message };
+  return { status, chainInfo, account, ensName, message };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -144,10 +144,14 @@ export function useConnect() {
         setConnectedAccount(account);
         setStatus(getWalletState({ status, account }));
 
+        const p1 = provider.getNetwork();
+        const p2 = provider.lookupAddress(account);
+        const plist = Promise.all([p1, p2]);
+
         // NOTE: intentionally not `await`ed
-        provider.getNetwork().then((network) => {
+        plist.then(([network, ensName]) => {
           const chainId = `0x${network.chainId.toString(16)}`;
-          setStatus(getWalletState({ status, chainId, account }));
+          setStatus(getWalletState({ status, chainId, account, ensName }));
         });
       } catch (err) {
         console.error(err);
@@ -192,11 +196,7 @@ export function useConnect() {
       try {
         const provider = new ethers.BrowserProvider(ethereum);
 
-        const p1 = provider.listAccounts();
-        const p2 = provider.getNetwork();
-        const [accountsRpc, network] = await Promise.all([p1, p2]);
-        const chainId = `0x${network.chainId.toString(16)}`;
-
+        const accountsRpc = await provider.listAccounts();
         const accounts = accountsRpc.map((v) => v.address);
 
         let account = getConnectedAccount() ?? undefined;
@@ -210,7 +210,18 @@ export function useConnect() {
         } else if (!addr_includes(accounts, account)) {
           await handleDisconnect();
         } else {
-          setStatus(getWalletState({ status: 'connected', chainId, account }));
+          const status = 'connected';
+          setStatus(getWalletState({ status, account }));
+
+          const p1 = provider.getNetwork();
+          const p2 = provider.lookupAddress(account!);
+          const plist = Promise.all([p1, p2]);
+
+          // NOTE: intentionally not `await`ed
+          plist.then(([network, ensName]) => {
+            const chainId = `0x${network.chainId.toString(16)}`;
+            setStatus(getWalletState({ status, chainId, account, ensName }));
+          });
         }
       } catch (err) {
         console.error(err);
@@ -499,6 +510,7 @@ export interface WalletState {
   status: 'missing' | 'connected' | 'error' | 'not_connected' | undefined;
   chainInfo?: ChainInfo;
   account?: string;
+  ensName?: string | null;
   message?: string;
 }
 
@@ -506,6 +518,7 @@ interface WalletStateArg {
   status: WalletState['status'];
   chainId?: string;
   account?: string;
+  ensName?: string | null;
   error?: ErrorShape;
 }
 
