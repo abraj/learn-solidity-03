@@ -7,7 +7,7 @@ export async function serverZKProof(inputData: InputData) {
   const proverKeyFile = 'keys/circuit_final.zkey';
   const verificationKeyFile = 'keys/verification_key.json';
 
-  const basePath = process.cwd() + '/src/api-express/server/zk-proof/';
+  const basePath = process.cwd() + '/src/server/zk-proof/';
   const circuitPath = path.resolve(basePath, circuitFile);
   const proverKeyPath = path.resolve(basePath, proverKeyFile);
   const verificationKeyPath = path.resolve(basePath, verificationKeyFile);
