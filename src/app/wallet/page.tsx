@@ -11,6 +11,7 @@ import WithdrawFundMe from '@/components/wallet/fundme-withdraw';
 import SendTxn from '@/components/wallet/send-txn';
 import Pubkey from '@/components/wallet/public-key';
 import EncryptionDemo from '@/components/wallet/encryption';
+import ZKDemo from '@/components/zk/ZKDemo';
 import type { WalletAccount } from '@/components/wallet/connect';
 // import { contractAddress } from '@/const/sepolia';
 
@@ -33,6 +34,7 @@ export default function Page() {
       <Balance address={address} chainInfo={account?.chainInfo} />
       {/* <Balance address={contractAddress} /> */}
       <SendTxn address={address} chainInfo={account?.chainInfo} />
+      <ZKDemo visible={!!address} />
 
       <FundFundMe visible={!!address} />
       <WithdrawFundMe visible={!!address} />
