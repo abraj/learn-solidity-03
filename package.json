@@ -17,12 +17,14 @@
     "next": "15.0.0-canary.157",
     "react": "19.0.0-rc-206df66e-20240912",
     "react-dom": "19.0.0-rc-206df66e-20240912",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "snarkjs": "^0.7.4"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/snarkjs": "^0.7.8",
     "eslint": "^8",
     "eslint-config-next": "15.0.0-canary.157",
     "eslint-config-prettier": "^9.1.0",
