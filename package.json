@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run clean && run-p next:dev express",
+    "dev": "npm run clean && run-p next:dev express:dev",
     "next:dev": "next dev --turbo",
     "next:start": "next start",
     "build": "npm run clean && next build",
     "start": "npm run build && run-p next:start express",
     "lint": "next lint",
     "export": "OUTPUT=export npm run build && serve out/",
-    "express": "node --loader ts-node/esm src/server/express/index.ts",
+    "express:dev": "nodemon -w src --ext js,ts,json --exec 'tsx src/server/express/index.ts'",
+    "express": "tsx src/server/express/index.ts",
+    "express:bkp": "node --loader ts-node/esm src/server/express/index.ts",
     "clean": "rm -rf .next out"
   },
   "dependencies": {
@@ -37,11 +39,13 @@
     "eslint-config-next": "15.0.0-canary.157",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
+    "nodemon": "^3.1.7",
     "npm-run-all": "^4.1.5",
     "postcss": "^8",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.1",
     "typescript": "^5"
   }
 }
