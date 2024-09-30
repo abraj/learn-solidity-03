@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ethers } from 'ethers';
-import { contractAddress, abi } from '@/const/sepolia';
+import { contractAddress, abi } from '@/utils/const/sepolia';
 import { getErrorShape } from './wallet';
 
 export function useFundFundMe() {

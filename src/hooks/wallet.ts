@@ -462,7 +462,7 @@ export function useTxn() {
           Number(amount)
         );
       } else {
-        console.error('Invalid submitter');
+        console.error('Invalid submitter!');
       }
     },
     [submitTxn, submitTxnFromServer]
