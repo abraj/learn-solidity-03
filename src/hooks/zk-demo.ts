@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useState } from 'react';
 // import { zkDemoAction } from '@/api/zk/zk-demo';
 
-async function zkDemoRequest(inputData: InputData) {
+async function zkDemoRequest(inputData: InputData, verifyOnChain: boolean) {
   if (!inputData) return;
   try {
     const resp = await fetch('http://localhost:3001/zk-demo', {
@@ -9,7 +9,7 @@ async function zkDemoRequest(inputData: InputData) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(inputData),
+      body: JSON.stringify({ inputData, verifyOnChain }),
     });
     const respData = await resp.json();
     return respData;
@@ -22,26 +22,29 @@ export function useZKDemo() {
   const [message, setMessage] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
 
-  const submitZKProofOnServer = useCallback(async (inputData: InputData) => {
-    setLoading(true);
-    // await zkDemoAction(inputData);
-    const respData = await zkDemoRequest(inputData);
-    setLoading(false);
+  const submitZKProofOnServer = useCallback(
+    async (inputData: InputData, verifyOnChain = false) => {
+      setLoading(true);
+      // await zkDemoAction(inputData);
+      const respData = await zkDemoRequest(inputData, verifyOnChain);
+      setLoading(false);
 
-    let msg = '';
-    if (!respData) {
-      msg = 'Unable to perform server request!';
-    } else {
-      const { status, data, errMsg } = respData;
-      if (status === 'ok' && data.verified === true) {
-        msg = 'ZK Verification OK';
+      let msg = '';
+      if (!respData) {
+        msg = 'Unable to perform server request!';
       } else {
-        msg = errMsg ?? '';
+        const { status, data, errMsg } = respData;
+        if (status === 'ok' && data.verified === true) {
+          msg = 'ZK Verification OK';
+        } else {
+          msg = errMsg ?? '';
+        }
       }
-    }
 
-    if (msg) setMessage(msg);
-  }, []);
+      setMessage(msg);
+    },
+    []
+  );
 
   const submitZKProof = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -64,7 +67,7 @@ export function useZKDemo() {
       if (submitter === 'button1') {
         await submitZKProofOnServer(inputData);
       } else if (submitter === 'button2') {
-        // await submitZKProofOnSepolia(inputData);
+        await submitZKProofOnServer(inputData, true);
       } else {
         console.error('Invalid submitter!');
       }
