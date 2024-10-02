@@ -1,3 +1,4 @@
+import './dotenv-config';
 import express from 'express';
 import cors, { CorsOptions } from 'cors';
 import { zkDemoHandler } from './routes/zk-demo.js';
